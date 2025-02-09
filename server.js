@@ -90,6 +90,25 @@ app.get('/api/products/category/:categoryId', async (req, res, next) => {
   }
 });
 
+// Search products with fuzzy search
+app.get('/api/products/search', async (req, res, next) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const searchQuery = `%${query}%`;
+    const result = await pool.query(
+      'SELECT * FROM products WHERE name ILIKE $1 OR description ILIKE $1',
+      [searchQuery]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    next(err); // Pass the error to the error-handling middleware
+  }
+});
+
 // Add a new product with input validation
 app.post(
     '/api/products',
@@ -142,6 +161,16 @@ app.delete('/api/products/:id', async (req, res, next) => {
     const { id } = req.params;
     await pool.query('DELETE FROM products WHERE id = $1', [id]);
     res.json({ message: 'Product deleted' });
+  } catch (err) {
+    next(err); // Pass the error to the error-handling middleware
+  }
+});
+
+// Get all categories
+app.get('/api/categories', async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT * FROM categories');
+    res.json(result.rows);
   } catch (err) {
     next(err); // Pass the error to the error-handling middleware
   }
